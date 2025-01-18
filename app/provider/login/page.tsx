@@ -1,23 +1,78 @@
-/* eslint-disable react/no-unescaped-entities */
 'use client'
 
 import React, { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { useTheme } from '@/app/context/ThemeContext';
 
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+interface LoginResponse {
+  message: string;
+  provider_id: number;
+  business_name: string;
+  email: string;
+  business_photo: string;
+  service_category: string;
+}
+
 export default function ProviderLoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { isDarkMode } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add login logic here
-    console.log('Login attempt with:', formData);
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/api/provider/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data: LoginResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Store provider data in localStorage
+      localStorage.setItem('provider_id', data.provider_id.toString());
+      localStorage.setItem('provider_data', JSON.stringify({
+        business_name: data.business_name,
+        email: data.email,
+        business_photo: data.business_photo,
+        service_category: data.service_category
+      }));
+
+      console.log('Login successful, redirecting...', data);
+      router.push('/provider/profile');
+      
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,6 +97,18 @@ export default function ProviderLoginPage() {
             Login to manage your services and bookings
           </p>
         </div>
+
+        {error && (
+          <div className="mb-6 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {searchParams.get('registered') && (
+          <div className="mb-6 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+            Registration successful! Please log in with your credentials.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Input */}
@@ -118,9 +185,10 @@ export default function ProviderLoginPage() {
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+            disabled={loading}
+            className={`w-full ${loading ? 'bg-blue-400' : 'bg-blue-500'} text-white py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors`}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
 
           {/* Register Link */}

@@ -1,70 +1,57 @@
 'use client'
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Clock, MapPin, Calendar } from 'lucide-react';
 import { useTheme } from '@/app/context/ThemeContext';
 import BottomNavigation from '@/app/components/navigation/BottomNavigation';
 
-type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected';
+type BookingStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
 
 interface Booking {
   id: number;
-  customerName: string;
-  customerImage: string;
-  service: string;
-  date: string;
-  time: string;
-  location: string;
-  price: number;
+  user_id: number;
+  service_id: number;
+  booking_date: string;
+  booking_time: string;
   status: BookingStatus;
+  total_amount: number;
+  booking_notes: string;
+  created_at: string;
+  service_title: string;
+  service_image: string;
+  user_name: string;
+  user_mobile: string;
 }
 
 export default function ProviderBookingsPage() {
   const { isDarkMode } = useTheme();
   const [activeTab, setActiveTab] = useState<BookingStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample bookings data (replace with actual data from your backend)
-  const [bookings] = useState<Booking[]>([
-    {
-      id: 1,
-      customerName: "John Smith",
-      customerImage: "/api/placeholder/40/40",
-      service: "Deep House Cleaning",
-      date: "2024-01-16",
-      time: "10:00 AM",
-      location: "123 Main St, Brooklyn",
-      price: 150,
-      status: 'pending'
-    },
-    {
-      id: 2,
-      customerName: "Sarah Wilson",
-      customerImage: "/api/placeholder/40/40",
-      service: "Kitchen Cleaning",
-      date: "2024-01-16",
-      time: "2:00 PM",
-      location: "456 Park Ave, Manhattan",
-      price: 80,
-      status: 'confirmed'
-    },
-    {
-      id: 3,
-      customerName: "Mike Johnson",
-      customerImage: "/api/placeholder/40/40",
-      service: "Deep House Cleaning",
-      date: "2024-01-15",
-      time: "11:00 AM",
-      location: "789 Broadway, Queens",
-      price: 150,
-      status: 'completed'
-    }
-  ]);
+  // Fetch bookings for the provider
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        // Replace 1 with actual provider_id from auth context
+        const response = await fetch('http://localhost:5000/api/booking/provider/1/bookings');
+        if (!response.ok) throw new Error('Failed to fetch bookings');
+        const data = await response.json();
+        setBookings(data.bookings);
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, []);
 
   const tabs: Array<{ key: BookingStatus | 'all'; label: string }> = [
     { key: 'all', label: 'All' },
     { key: 'pending', label: 'Pending' },
-    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'approved', label: 'Approved' },
     { key: 'completed', label: 'Completed' },
     { key: 'cancelled', label: 'Cancelled' },
     { key: 'rejected', label: 'Rejected' }
@@ -73,7 +60,7 @@ export default function ProviderBookingsPage() {
   const getStatusColor = (status: BookingStatus) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-green-100 text-green-800',
+      approved: 'bg-green-100 text-green-800',
       completed: 'bg-blue-100 text-blue-800',
       cancelled: 'bg-gray-100 text-gray-800',
       rejected: 'bg-red-100 text-red-800'
@@ -83,16 +70,41 @@ export default function ProviderBookingsPage() {
 
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = activeTab === 'all' || booking.status === activeTab;
-    const matchesSearch = booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = booking.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         booking.service_title.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
   });
 
   const handleStatusChange = async (bookingId: number, newStatus: BookingStatus) => {
-    // Here you would handle the status change in your backend
-    console.log(`Changing booking ${bookingId} status to ${newStatus}`);
+    try {
+      const response = await fetch(`http://localhost:5000/api/booking/${bookingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) throw new Error('Failed to update booking status');
+
+      // Update local state
+      setBookings(prevBookings =>
+        prevBookings.map(booking =>
+          booking.id === bookingId ? { ...booking, status: newStatus } : booking
+        )
+      );
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} p-4`}>
+        <p className={isDarkMode ? 'text-gray-100' : 'text-gray-900'}>Loading bookings...</p>
+      </div>
+    );
+  }
 
   return (
     <main className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} pb-20`}>
@@ -124,8 +136,7 @@ export default function ProviderBookingsPage() {
 
         {/* Tab Navigation */}
         <div className="flex overflow-x-auto space-x-2 pb-2 hide-scrollbar">
-          {tabs.map(({ key, label }) => (
-            <button
+          {tabs.map(({ key, label }) => (<button
               key={key}
               onClick={() => setActiveTab(key)}
               className={`px-4 py-2 rounded-lg whitespace-nowrap ${
@@ -152,20 +163,20 @@ export default function ProviderBookingsPage() {
             {/* Customer Info */}
             <div className="flex items-center gap-3 mb-3">
               <img 
-                src={booking.customerImage} 
-                alt={booking.customerName}
+                src="/api/placeholder/40/40"  // Replace with actual user image when available
+                alt={booking.user_name}
                 className="w-10 h-10 rounded-full"
               />
               <div className="flex-1">
                 <h3 className={`font-medium ${
                   isDarkMode ? 'text-gray-100' : 'text-gray-900'
                 }`}>
-                  {booking.customerName}
+                  {booking.user_name}
                 </h3>
                 <p className={`text-sm ${
                   isDarkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>
-                  {booking.service}
+                  {booking.service_title}
                 </p>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
@@ -178,7 +189,7 @@ export default function ProviderBookingsPage() {
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-blue-500" />
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {new Date(booking.date).toLocaleDateString('en-US', {
+                  {new Date(booking.booking_date).toLocaleDateString('en-US', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -189,29 +200,45 @@ export default function ProviderBookingsPage() {
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-blue-500" />
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {booking.time}
+                  {booking.booking_time}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-blue-500" />
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  {booking.location}
+                  Contact: {booking.user_mobile}
                 </span>
               </div>
+              {booking.booking_notes && (
+                <div className={`mt-2 p-3 rounded-lg ${
+                  isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                }`}>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <strong>Notes:</strong> {booking.booking_notes}
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Actions */}
+            {/* Price */}
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                Total Amount: <span className="text-blue-500">${booking.total_amount}</span>
+              </p>
+            </div>
+
+            {/* Actions for pending bookings */}
             {booking.status === 'pending' && (
-              <div className="flex gap-2 mt-4 pt-4 border-t border-gray-200">
+              <div className="flex gap-2 mt-4">
                 <button
-                  onClick={() => handleStatusChange(booking.id, 'confirmed')}
-                  className="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600"
+                  onClick={() => handleStatusChange(booking.id, 'approved')}
+                  className="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
                 >
                   Accept
                 </button>
                 <button
                   onClick={() => handleStatusChange(booking.id, 'rejected')}
-                  className="flex-1 bg-red-500 text-white py-2 rounded-lg font-medium hover:bg-red-600"
+                  className="flex-1 bg-red-500 text-white py-2 rounded-lg font-medium hover:bg-red-600 transition-colors"
                 >
                   Reject
                 </button>
@@ -230,4 +257,4 @@ export default function ProviderBookingsPage() {
       <BottomNavigation />
     </main>
   );
-}
+} 
