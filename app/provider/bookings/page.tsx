@@ -1,10 +1,11 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, MapPin, Calendar } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/app/context/ThemeContext';
 import BottomNavigation from '@/app/components/navigation/BottomNavigation';
 
-type BookingStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
+type BookingStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled' | 'paid_deposit';
 
 interface Booking {
   id: number;
@@ -20,22 +21,60 @@ interface Booking {
   service_image: string;
   user_name: string;
   user_mobile: string;
+  user_image: string;
 }
 
 export default function ProviderBookingsPage() {
   const { isDarkMode } = useTheme();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<BookingStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
-  // Fetch bookings for the provider
+  // Add isClient check
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Add click handler for the booking card
+  const handleBookingClick = (booking: Booking) => {
+    if (booking.status === 'approved' || booking.status === 'paid_deposit') {
+      router.push(`/provider/bookings/${booking.id}`);
+    }
+  };
+  
+
+  // Updated fetch bookings with authentication
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        // Replace 1 with actual provider_id from auth context
-        const response = await fetch('http://localhost:5000/api/booking/provider/1/bookings');
-        if (!response.ok) throw new Error('Failed to fetch bookings');
+        if (!isClient) return;
+
+        const providerId = localStorage.getItem('provider_id');
+        const storedData = localStorage.getItem('provider_data');
+
+        if (!providerId || !storedData) {
+          console.log('No stored data found, redirecting to login...');
+          router.push('/provider/login');
+          return;
+        }
+
+        const response = await fetch(`http://localhost:5000/api/booking/provider/${providerId}/bookings`);
+        
+        if (response.status === 401) {
+          console.log('Unauthorized, redirecting to login...');
+          localStorage.removeItem('provider_id');
+          localStorage.removeItem('provider_data');
+          router.push('/provider/login');
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch bookings');
+        }
+
         const data = await response.json();
         setBookings(data.bookings);
       } catch (error) {
@@ -45,8 +84,10 @@ export default function ProviderBookingsPage() {
       }
     };
 
-    fetchBookings();
-  }, []);
+    if (isClient) {
+      fetchBookings();
+    }
+  }, [isClient, router]);
 
   const tabs: Array<{ key: BookingStatus | 'all'; label: string }> = [
     { key: 'all', label: 'All' },
@@ -54,7 +95,8 @@ export default function ProviderBookingsPage() {
     { key: 'approved', label: 'Approved' },
     { key: 'completed', label: 'Completed' },
     { key: 'cancelled', label: 'Cancelled' },
-    { key: 'rejected', label: 'Rejected' }
+    { key: 'rejected', label: 'Rejected' },
+    { key: 'paid_deposit', label: 'Paid Deposit' }
   ];
 
   const getStatusColor = (status: BookingStatus) => {
@@ -63,9 +105,22 @@ export default function ProviderBookingsPage() {
       approved: 'bg-green-100 text-green-800',
       completed: 'bg-blue-100 text-blue-800',
       cancelled: 'bg-gray-100 text-gray-800',
-      rejected: 'bg-red-100 text-red-800'
+      rejected: 'bg-red-100 text-red-800',
+      paid_deposit: 'bg-green-100 text-green-800'
     };
     return colors[status];
+  };
+
+  const getStatusLabel = (status: BookingStatus): string => {
+    const labels = {
+      pending: 'Pending',
+      approved: 'Approved',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      rejected: 'Rejected',
+      paid_deposit: 'Paid Deposit'
+    };
+    return labels[status];
   };
 
   const filteredBookings = bookings.filter(booking => {
@@ -75,8 +130,17 @@ export default function ProviderBookingsPage() {
     return matchesStatus && matchesSearch;
   });
 
+  // Updated handleStatusChange with authentication
   const handleStatusChange = async (bookingId: number, newStatus: BookingStatus) => {
     try {
+      const providerId = localStorage.getItem('provider_id');
+      
+      if (!providerId) {
+        console.log('No provider ID found, redirecting to login...');
+        router.push('/provider/login');
+        return;
+      }
+
       const response = await fetch(`http://localhost:5000/api/booking/${bookingId}/status`, {
         method: 'PUT',
         headers: {
@@ -84,6 +148,14 @@ export default function ProviderBookingsPage() {
         },
         body: JSON.stringify({ status: newStatus })
       });
+
+      if (response.status === 401) {
+        console.log('Unauthorized, redirecting to login...');
+        localStorage.removeItem('provider_id');
+        localStorage.removeItem('provider_data');
+        router.push('/provider/login');
+        return;
+      }
 
       if (!response.ok) throw new Error('Failed to update booking status');
 
@@ -97,6 +169,11 @@ export default function ProviderBookingsPage() {
       console.error('Error updating booking status:', error);
     }
   };
+
+  // Add initial client-side check
+  if (!isClient) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -136,7 +213,8 @@ export default function ProviderBookingsPage() {
 
         {/* Tab Navigation */}
         <div className="flex overflow-x-auto space-x-2 pb-2 hide-scrollbar">
-          {tabs.map(({ key, label }) => (<button
+          {tabs.map(({ key, label }) => (
+            <button
               key={key}
               onClick={() => setActiveTab(key)}
               className={`px-4 py-2 rounded-lg whitespace-nowrap ${
@@ -158,31 +236,39 @@ export default function ProviderBookingsPage() {
         {filteredBookings.map((booking) => (
           <div 
             key={booking.id}
-            className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-sm`}
+            onClick={() => handleBookingClick(booking)}
+            className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-sm ${
+              (booking.status === 'approved' || booking.status === 'paid_deposit') ? 'cursor-pointer hover:opacity-90' : ''
+            }`}
           >
             {/* Customer Info */}
             <div className="flex items-center gap-3 mb-3">
-              <img 
-                src="/api/placeholder/40/40"  // Replace with actual user image when available
-                alt={booking.user_name}
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="flex-1">
-                <h3 className={`font-medium ${
-                  isDarkMode ? 'text-gray-100' : 'text-gray-900'
-                }`}>
-                  {booking.user_name}
-                </h3>
-                <p className={`text-sm ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
-                }`}>
-                  {booking.service_title}
-                </p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-              </span>
-            </div>
+  <img 
+    src={booking.user_image || "/default-avatar.png"}  // Use default-avatar.png as fallback
+    alt={booking.user_name}
+    className="w-10 h-10 rounded-full object-cover bg-gray-200"
+    onError={(e) => {
+      const target = e.target as HTMLImageElement;
+      target.onerror = null; // Prevent infinite loop
+      target.src = "/default-avatar.png"; // Fallback if user_image fails to load
+    }}
+  />
+  <div className="flex-1">
+    <h3 className={`font-medium ${
+      isDarkMode ? 'text-gray-100' : 'text-gray-900'
+    }`}>
+      {booking.user_name}
+    </h3>
+    <p className={`text-sm ${
+      isDarkMode ? 'text-gray-400' : 'text-gray-500'
+    }`}>
+      {booking.service_title}
+    </p>
+  </div>
+  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+    {getStatusLabel(booking.status)}
+  </span>
+</div>
 
             {/* Booking Details */}
             <div className="space-y-2">
@@ -223,7 +309,7 @@ export default function ProviderBookingsPage() {
             {/* Price */}
             <div className="mt-3 pt-3 border-t border-gray-200">
               <p className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                Total Amount: <span className="text-blue-500">${booking.total_amount}</span>
+                Total Amount: <span className="text-blue-500">RM{booking.total_amount}</span>
               </p>
             </div>
 
@@ -231,13 +317,19 @@ export default function ProviderBookingsPage() {
             {booking.status === 'pending' && (
               <div className="flex gap-2 mt-4">
                 <button
-                  onClick={() => handleStatusChange(booking.id, 'approved')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(booking.id, 'approved');
+                  }}
                   className="flex-1 bg-green-500 text-white py-2 rounded-lg font-medium hover:bg-green-600 transition-colors"
                 >
                   Accept
                 </button>
                 <button
-                  onClick={() => handleStatusChange(booking.id, 'rejected')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(booking.id, 'rejected');
+                  }}
                   className="flex-1 bg-red-500 text-white py-2 rounded-lg font-medium hover:bg-red-600 transition-colors"
                 >
                   Reject
@@ -257,4 +349,4 @@ export default function ProviderBookingsPage() {
       <BottomNavigation />
     </main>
   );
-} 
+}

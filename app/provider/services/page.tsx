@@ -20,8 +20,8 @@ interface Service {
   customer_requirements: string;
   cancellation_policy: string;
   service_image: string;
-  isActive: boolean;
-  total_rating: number;
+  status: boolean; // Changed from isActive to status to match backend
+  total_rating: number | null;
   rating_count: number;
 }
 
@@ -31,6 +31,11 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({ service, onToggleActive }) => {
+  console.log('Service rating data:', {
+    total_rating: service.total_rating,
+    rating_count: service.rating_count
+  });
+
   const { isDarkMode } = useTheme();
 
   const handlePowerClick = (e: React.MouseEvent) => {
@@ -39,14 +44,24 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onToggleActive }) =>
     onToggleActive(service.id);
   };
 
-  const renderStars = (rating: number) => {
-    const roundedRating = Math.round((rating || 0) * 2) / 2; // Round to nearest 0.5
+  const renderStars = (rating: number | null, count: number) => {
+    if (!rating && count === 0) {
+      return (
+        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          No reviews yet
+        </span>
+      );
+    }
+
+    const roundedRating = Math.round((rating || 0) * 2) / 2;
     return (
       <div className="flex items-center gap-1">
-        {[...Array(5)].map((_, index) => (
-          <Star
+        <div className="flex">
+          {[...Array(5)].map((_, index) => (
+            <Star
             key={index}
-            className={`w-4 h-4 ${
+            size={16}
+            className={`${
               index < Math.floor(roundedRating)
                 ? 'text-yellow-400 fill-yellow-400'
                 : index === Math.floor(roundedRating) && roundedRating % 1 !== 0
@@ -54,13 +69,15 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onToggleActive }) =>
                 : 'text-gray-300'
             }`}
           />
-        ))}
+          ))}
+        </div>
         <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-          ({service.rating_count || 0})
+          {rating ? ` ${rating.toFixed(1)} (${count})` : ''}
         </span>
       </div>
     );
   };
+
 
   return (
     <Link href={`/provider/services/${service.id}/edit`}>
@@ -91,17 +108,16 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onToggleActive }) =>
                 {service.service_title}
               </h3>
               <span className={`text-xs px-2 py-0.5 rounded-full ${
-                service.isActive 
+                service.status 
                   ? 'bg-green-100 text-green-600' 
                   : 'bg-gray-100 text-gray-600'
               }`}>
-                {service.isActive ? 'Active' : 'Inactive'}
+                {service.status ? 'Active' : 'Inactive'}
               </span>
             </div>
             
-            {/* Rating display */}
             <div className="mb-1">
-              {renderStars(service.total_rating || 0)}
+              {renderStars(service.total_rating, service.rating_count)}
             </div>
 
             <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -109,7 +125,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onToggleActive }) =>
             </p>
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-blue-500 font-semibold">${service.price}</span>
+                <span className="text-blue-500 font-semibold">RM{service.price}</span>
                 <span className={`text-sm ml-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {service.service_areas.join(', ')}
                 </span>
@@ -122,7 +138,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, onToggleActive }) =>
                   } transition-colors`}
                 >
                   <Power className={`w-4 h-4 ${
-                    service.isActive ? 'text-green-500' : 'text-gray-500'
+                    service.status ? 'text-green-500' : 'text-gray-500'
                   }`} />
                 </button>
                 <ChevronRight className={`w-5 h-5 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
@@ -168,7 +184,8 @@ export default function ProviderServicesPage() {
           return;
         }
 
-        const response = await fetch(`http://127.0.0.1:5000/api/services/provider/${providerId}`);
+        // Using the general services endpoint
+        const response = await fetch('http://127.0.0.1:5000/api/services');
         
         if (!response.ok) {
           if (response.status === 401) {
@@ -182,10 +199,12 @@ export default function ProviderServicesPage() {
         
         const data = await response.json();
         
-        if (Array.isArray(data)) {
-          setServices(data);
-        } else if (data.services && Array.isArray(data.services)) {
-          setServices(data.services);
+        if (data.services && Array.isArray(data.services)) {
+          // Filter services for current provider
+          const providerServices = data.services.filter(
+            (            service: { provider_id: number; }) => service.provider_id === parseInt(providerId)
+          );
+          setServices(providerServices);
         } else {
           console.error('Invalid data format received:', data);
           setError('Invalid data format received from server');
@@ -208,23 +227,22 @@ export default function ProviderServicesPage() {
       const service = services.find(s => s.id === serviceId);
       if (!service) return;
 
-      const response = await fetch(`http://127.0.0.1:5000/api/services/update/${serviceId}`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/services/${serviceId}/toggle-status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isActive: !service.isActive
-        }),
+        }
       });
 
       if (!response.ok) {
         throw new Error('Failed to update service');
       }
 
+      const result = await response.json();
+
       setServices(prevServices => 
         prevServices.map(s => 
-          s.id === serviceId ? { ...s, isActive: !s.isActive } : s
+          s.id === serviceId ? { ...s, status: result.status } : s
         )
       );
     } catch (error) {
@@ -241,7 +259,6 @@ export default function ProviderServicesPage() {
 
   return (
     <main className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} pb-20`}>
-      {/* Header */}
       <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-4 sticky top-0 z-10 border-b ${
         isDarkMode ? 'border-gray-700' : 'border-gray-200'
       }`}>
@@ -256,7 +273,6 @@ export default function ProviderServicesPage() {
           </Link>
         </div>
 
-        {/* Search Bar */}
         <div className="relative">
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
             isDarkMode ? 'text-gray-400' : 'text-gray-500'
@@ -275,7 +291,6 @@ export default function ProviderServicesPage() {
         </div>
       </div>
 
-      {/* Error Alert */}
       {error && (
         <div className="p-4">
           <Alert variant="destructive">
@@ -284,7 +299,6 @@ export default function ProviderServicesPage() {
         </div>
       )}
 
-      {/* Services List */}
       <div className="p-4">
         {loading ? (
           <div className="space-y-4">
@@ -310,4 +324,4 @@ export default function ProviderServicesPage() {
       <BottomNavigation />
     </main>
   );
-} 
+}

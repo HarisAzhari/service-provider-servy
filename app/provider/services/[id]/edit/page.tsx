@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Upload, Trash2, AlertCircle, Clock, DollarSign, Power } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, AlertCircle, Clock, Power } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/app/context/ThemeContext';
 import BottomNavigation from '@/app/components/navigation/BottomNavigation';
@@ -435,23 +435,25 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
           {/* Price */}
           {renderField('Price', errors.price, (
             <div className="relative">
-              <DollarSign className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
-                isDarkMode ? 'text-gray-400' : 'text-gray-500'
-              }`} />
-              <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                className={`w-full pl-10 pr-4 py-3 rounded-lg ${
-                  isDarkMode 
-                    ? 'bg-gray-800 text-gray-100 border-gray-700' 
-                    : 'bg-white text-gray-900 border-gray-300'
-                } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
-            </div>
+            <span className={`absolute left-3 top-1/2 -translate-y-1/2 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
+              RM
+            </span>
+            <input
+              type="number"
+              value={formData.price}
+              onChange={(e) => setFormData({...formData, price: e.target.value})}
+              className={`w-full pl-10 pr-4 py-3 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-gray-800 text-gray-100 border-gray-700' 
+                  : 'bg-white text-gray-900 border-gray-300'
+              } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+            />
+          </div>
           ))}
 
           {/* Duration */}

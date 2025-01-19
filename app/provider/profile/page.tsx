@@ -50,13 +50,52 @@ const MenuGroup = ({ title, items }: { title: string; items: MenuItem[]; }) => {
       <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl overflow-hidden`}>
         {items.map((item, index) => {
           const Icon = item.icon;
-          const Component = item.href ? Link : 'button';
+          
+          // If it's a button (has onClick), render a button
+          if (!item.href) {
+            return (
+              <button
+                key={item.label}
+                onClick={item.onClick}
+                className={`w-full flex items-center justify-between p-4 ${
+                  isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                } transition-colors ${
+                  index !== items.length - 1 
+                    ? isDarkMode 
+                      ? 'border-b border-gray-700' 
+                      : 'border-b border-gray-100'
+                    : ''
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    item.color || (isDarkMode ? 'bg-gray-700' : 'bg-gray-100')
+                  }`}>
+                    <Icon className={`w-4 h-4 ${
+                      item.color ? 'text-white' : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`} />
+                  </div>
+                  <span className={`${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {item.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {item.info && (
+                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {item.info}
+                    </span>
+                  )}
+                  <ChevronRight className={`w-5 h-5 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                </div>
+              </button>
+            );
+          }
 
+          // If it has href, render a Link
           return (
-            <Component
+            <Link
               key={item.label}
-              href={item.href || ''}
-              onClick={item.onClick}
+              href={item.href}
               className={`w-full flex items-center justify-between p-4 ${
                 isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
               } transition-colors ${
@@ -87,7 +126,7 @@ const MenuGroup = ({ title, items }: { title: string; items: MenuItem[]; }) => {
                 )}
                 <ChevronRight className={`w-5 h-5 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
               </div>
-            </Component>
+            </Link>
           );
         })}
       </div>
@@ -176,21 +215,10 @@ export default function ProviderProfilePage() {
     {
       icon: User,
       label: 'Personal Information',
-      href: '/provider/profile/personal',
+      href: '/provider/profile/edit',
       color: 'bg-blue-500'
     },
-    {
-      icon: MapPin,
-      label: 'Business Location',
-      href: '/provider/profile/location',
-      color: 'bg-green-500'
-    },
-    {
-      icon: CreditCard,
-      label: 'Payment Methods',
-      href: '/provider/profile/payment',
-      color: 'bg-purple-500'
-    }
+    
   ];
 
   const preferencesItems: MenuItem[] = [
@@ -204,11 +232,6 @@ export default function ProviderProfilePage() {
       label: 'Dark Mode',
       onClick: toggleDarkMode,
       info: isDarkMode ? 'On' : 'Off'
-    },
-    {
-      icon: Clock,
-      label: 'Working Hours',
-      href: '/provider/profile/hours'
     }
   ];
 
