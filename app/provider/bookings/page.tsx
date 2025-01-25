@@ -61,13 +61,13 @@ export default function ProviderBookingsPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:5000/api/booking/provider/${providerId}/bookings`);
+        const response = await fetch(`http://127.0.0.1:5000/api/booking/provider/${providerId}/bookings`);
         
         if (response.status === 401) {
           console.log('Unauthorized, redirecting to login...');
           localStorage.removeItem('provider_id');
           localStorage.removeItem('provider_data');
-          router.push('/provider/login');
+          router.push('/provider/login');http://localhost:5000 
           return;
         }
 
@@ -141,7 +141,7 @@ export default function ProviderBookingsPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/booking/${bookingId}/status`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/booking/${bookingId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

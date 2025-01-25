@@ -16,6 +16,7 @@ interface FormData {
   confirmPassword: string;
   serviceCategory: string;
   businessPhoto: string | null;  // Changed from File to string
+  custom_category: string;  // Add this line
 }
 
 export default function ProviderRegisterPage() {
@@ -34,6 +35,7 @@ export default function ProviderRegisterPage() {
     confirmPassword: '',
     serviceCategory: '',
     businessPhoto: null,
+    custom_category: '', // Add this line
   });
 
   const serviceCategories = [
@@ -76,6 +78,7 @@ export default function ProviderRegisterPage() {
           business_name: formData.businessName,
           owner_name: formData.ownerName,
           service_category: formData.serviceCategory,
+          custom_category: formData.serviceCategory === 'Other' ? formData.custom_category : '', // Add this line
           email: formData.email,
           phone_number: formData.phone,
           password: formData.password
@@ -214,30 +217,50 @@ export default function ProviderRegisterPage() {
           </div>
 
           {/* Service Category */}
-          <div>
-            <label 
-              htmlFor="serviceCategory" 
-              className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-            >
-              Service Category
-            </label>
-            <select
-              id="serviceCategory"
-              className={`w-full px-4 py-3 rounded-lg ${
-                isDarkMode 
-                  ? 'bg-gray-800 text-gray-100 border-gray-700' 
-                  : 'bg-gray-50 text-gray-900 border-gray-200'
-              } border focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              value={formData.serviceCategory}
-              onChange={(e) => setFormData({ ...formData, serviceCategory: e.target.value })}
-              required
-            >
-              <option value="">Select a category</option>
-              {serviceCategories.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
+<div>
+  <label 
+    htmlFor="serviceCategory" 
+    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+  >
+    Service Category
+  </label>
+  <div className="space-y-3">
+    <select
+      id="serviceCategory"
+      className={`w-full px-4 py-3 rounded-lg ${
+        isDarkMode 
+          ? 'bg-gray-800 text-gray-100 border-gray-700' 
+          : 'bg-gray-50 text-gray-900 border-gray-200'
+      } border focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+      value={formData.serviceCategory}
+      onChange={(e) => setFormData({ ...formData, serviceCategory: e.target.value })}
+      required
+    >
+      <option value="">Select a category</option>
+      {serviceCategories.map((category) => (
+        <option key={category} value={category}>{category}</option>
+      ))}
+    </select>
+
+    {formData.serviceCategory === 'Other' && (
+      <div className="mt-3">
+        <input
+          type="text"
+          id="customCategory"
+          placeholder="Enter your custom category"
+          className={`w-full px-4 py-3 rounded-lg ${
+            isDarkMode 
+              ? 'bg-gray-800 text-gray-100 border-gray-700' 
+              : 'bg-gray-50 text-gray-900 border-gray-200'
+          } border focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+          value={formData.custom_category}
+          onChange={(e) => setFormData({ ...formData, custom_category: e.target.value })}
+          required
+        />
+      </div>
+    )}
+  </div>
+</div>
 
           {/* Email */}
           <div>

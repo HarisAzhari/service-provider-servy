@@ -116,7 +116,7 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
   useEffect(() => {
     const fetchServiceDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/services/${id}`);
+        const response = await fetch(`http://127.0.0.1:5000/api/services/${id}`);
         if (!response.ok) {
           throw new Error('Service not found');
         }
@@ -190,7 +190,7 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
 
   const handleStatusToggle = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/services/${id}/toggle-status`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/services/${id}/toggle-status`, {
         method: 'PUT',
       });
 
@@ -224,7 +224,7 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
         status: formData.isActive
       };
 
-      const response = await fetch(`http://localhost:5000/api/services/update/${id}`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/services/update/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -620,7 +620,7 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
             onClick={async () => {
               if (window.confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
                 try {
-                  const response = await fetch(`http://localhost:5000/api/services/delete/${id}`, {
+                  const response = await fetch(`http://127.0.0.1:5000/api/services/delete/${id}`, {
                     method: 'DELETE'
                   });
                   

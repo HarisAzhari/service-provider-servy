@@ -47,7 +47,7 @@ export default function ProviderEarningsPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:5000/api/booking/provider/${providerId}/bookings?status=completed`);
+        const response = await fetch(`http://127.0.0.1:5000/api/booking/provider/${providerId}/bookings?status=completed`);
         
         if (response.status === 401) {
           localStorage.removeItem('provider_id');
