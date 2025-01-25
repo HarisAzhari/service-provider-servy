@@ -30,7 +30,7 @@ export default function ProviderBookingDetailsPage({ params }: { params: Promise
   useEffect(() => {
     const fetchBookingDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/booking/${resolvedParams.id}`);
+        const response = await fetch(`http://127.0.0.1:5000/api/booking/${resolvedParams.id}`);
         if (!response.ok) throw new Error('Failed to fetch booking details');
         const data = await response.json();
         setBooking(data.booking);  // Access the nested booking object
@@ -48,7 +48,7 @@ export default function ProviderBookingDetailsPage({ params }: { params: Promise
     if (!booking) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/booking/${booking.id}/status`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/booking/${booking.id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

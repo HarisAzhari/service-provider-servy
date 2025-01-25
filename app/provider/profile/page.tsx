@@ -12,7 +12,8 @@ import {
   LogOut,
   Moon,
   HelpCircle,
-  MapPin
+  MapPin,
+  Star
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -37,6 +38,13 @@ interface ProviderProfile {
   email: string;
   phone_number: string;
 }
+
+interface ProviderRating {
+  total_rating: number | null;
+  rating_count: number;
+}
+
+
 
 const MenuGroup = ({ title, items }: { title: string; items: MenuItem[]; }) => {
   const { isDarkMode } = useTheme();
@@ -140,6 +148,10 @@ export default function ProviderProfilePage() {
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [ratingData, setRatingData] = useState<ProviderRating>({
+    total_rating: null,
+    rating_count: 0
+  });
 
   useEffect(() => {
     setIsClient(true);
@@ -248,6 +260,40 @@ export default function ProviderProfilePage() {
     }
   ];
 
+  const renderStars = (rating: number | null, count: number) => {
+    if (!rating && count === 0) {
+      return (
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          No reviews yet
+        </span>
+      );
+    }
+  
+    const roundedRating = Math.round((rating || 0) * 2) / 2;
+    return (
+      <div className="flex items-center gap-1">
+        <div className="flex">
+          {[...Array(5)].map((_, index) => (
+            <Star
+              key={index}
+              size={14}  // Smaller size for profile header
+              className={`${
+                index < Math.floor(roundedRating)
+                  ? 'text-yellow-400 fill-yellow-400'
+                  : index === Math.floor(roundedRating) && roundedRating % 1 !== 0
+                  ? 'text-yellow-400 fill-yellow-400 opacity-50'
+                  : 'text-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          {rating ? ` ${rating.toFixed(1)} (${count})` : ''}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <main className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} pb-20`}>
       {/* Profile Header */}
@@ -281,15 +327,8 @@ export default function ProviderProfilePage() {
               {profile.service_category}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
-              }`}>
-                4.9 ★
-              </span>
-              <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                156 Reviews
-              </span>
-            </div>
+  {renderStars(ratingData.total_rating, ratingData.rating_count)}
+</div>
           </div>
         </div>
       </div>

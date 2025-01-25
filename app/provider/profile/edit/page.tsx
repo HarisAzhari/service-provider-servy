@@ -69,7 +69,7 @@ export default function EditProfilePage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:5000/api/provider/profile/${providerId}`);
+        const response = await fetch(`http://127.0.0.1:5000/api/provider/profile/${providerId}`);
         
         if (response.status === 401) {
           localStorage.removeItem('provider_id');
@@ -132,7 +132,7 @@ export default function EditProfilePage() {
         updateData.business_photo = newImage;
       }
 
-      const response = await fetch(`http://localhost:5000/api/provider/update/${providerId}`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/provider/update/${providerId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -200,7 +200,7 @@ export default function EditProfilePage() {
             <div className="relative">
               <img
                 src={newImage || profileData?.business_photo || '/default-business.png'}
-                alt="Business Photo"
+                alt="IC Photo"
                 className="w-24 h-24 rounded-full object-cover border-2 border-blue-500"
               />
               <label className="absolute bottom-0 right-0 p-1 bg-blue-500 rounded-full cursor-pointer hover:bg-blue-600 transition-colors">
