@@ -203,6 +203,33 @@ export default function ProviderProfilePage() {
     }
   }, [isClient, router]);
 
+  // Add this effect to fetch the ratings
+useEffect(() => {
+  const fetchRatings = async () => {
+    try {
+      if (!isClient) return;
+      
+      const providerId = localStorage.getItem('provider_id');
+      if (!providerId) return;
+      
+      // Use your existing API endpoint to get provider ratings
+      const response = await fetch(`http://127.0.0.1:5000/api/provider/${providerId}/rating`);
+      if (!response.ok) throw new Error('Failed to fetch ratings');
+      
+      const data = await response.json();
+      setRatingData({
+        total_rating: data.average_rating || 0,
+        rating_count: data.rating_count || 0
+      });
+      
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+    }
+  };
+
+  fetchRatings();
+}, [isClient]);
+
   const handleLogout = () => {
     if (isClient) {
       localStorage.removeItem('provider_id');

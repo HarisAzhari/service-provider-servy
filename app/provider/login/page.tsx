@@ -89,7 +89,7 @@ export default function ProviderLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState<LoginResponse['verification_status']>();
+  const [verificationStatus, setVerificationStatus] = useState<Provider['verification_status']>();
   const [verificationNotes, setVerificationNotes] = useState<string>();
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -124,7 +124,7 @@ export default function ProviderLoginPage() {
       
       if (!response.ok) {
         console.error('Response not OK:', response.status, data);
-        throw new Error(data.message || 'Login failed');
+        throw new Error('Login failed');
       }
 
       // Check verification status
