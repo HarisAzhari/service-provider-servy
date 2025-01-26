@@ -149,12 +149,12 @@ export default function ProviderRegisterPage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       try {
-        // Add file size check
-        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-          setError('Image size should be less than 5MB');
+        // Update file size check to 10MB
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          setError('Image size should be less than 10MB');
           return;
         }
-
+  
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64String = reader.result as string;
@@ -170,7 +170,7 @@ export default function ProviderRegisterPage() {
       }
     }
   };
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -328,13 +328,14 @@ export default function ProviderRegisterPage() {
             Click to upload IC Photo
           </p>
           <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-            (Required for verification)
+            Maximum size: 10MB
           </p>
         </div>
       )}
     </div>
   </div>
 </div>
+
 
 
           {/* Business Name */}
