@@ -183,7 +183,7 @@ const debouncedFetch = debounce(fetchLocationSuggestions, 300);
     
         
     
-        const response = await fetch('http://127.0.0.1:5000/api/services/create', {
+        const response = await fetch('http://beerescue.xyz:5000/api/services/create', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

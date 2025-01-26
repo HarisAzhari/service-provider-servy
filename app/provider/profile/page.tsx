@@ -174,7 +174,7 @@ export default function ProviderProfilePage() {
           return;
         }
 
-        const response = await fetch(`http://127.0.0.1:5000/api/provider/profile/${providerId}`);
+        const response = await fetch(`http://beerescue.xyz:5000/api/provider/profile/${providerId}`);
         
         if (response.status === 401) {
           console.log('Unauthorized, redirecting to login...');
@@ -213,7 +213,7 @@ useEffect(() => {
       if (!providerId) return;
       
       // Use your existing API endpoint to get provider ratings
-      const response = await fetch(`http://127.0.0.1:5000/api/provider/${providerId}/rating`);
+      const response = await fetch(`http://beerescue.xyz:5000/api/provider/${providerId}/rating`);
       if (!response.ok) throw new Error('Failed to fetch ratings');
       
       const data = await response.json();
