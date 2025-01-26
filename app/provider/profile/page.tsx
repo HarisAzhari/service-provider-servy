@@ -1,8 +1,6 @@
-/* eslint-disable react/no-unescaped-entities */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Settings, 
@@ -14,12 +12,13 @@ import {
   LogOut,
   Moon,
   HelpCircle,
-  MapPin
+  MapPin,
+  Star
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { useTheme } from '../../context/ThemeContext';
-import BottomNavigation from '../../components/navigation/BottomNavigation';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/app/context/ThemeContext';
+import BottomNavigation from '@/app/components/navigation/BottomNavigation';
 
 interface MenuItem {
   icon: any;
@@ -30,15 +29,25 @@ interface MenuItem {
   color?: string;
 }
 
-const MenuGroup = ({ 
-  title, 
-  items 
-}: { 
-  title: string; 
-  items: MenuItem[];
-}) => {
-  const { isDarkMode } = useTheme();
+interface ProviderProfile {
+  id: number;
+  business_name: string;
+  owner_name: string;
+  business_photo: string;
+  service_category: string;
+  email: string;
+  phone_number: string;
+}
 
+interface ProviderRating {
+  total_rating: number | null;
+  rating_count: number;
+}
+
+
+
+const MenuGroup = ({ title, items }: { title: string; items: MenuItem[]; }) => {
+  const { isDarkMode } = useTheme();
   return (
     <div className="mb-6">
       <h2 className={`text-sm font-medium mb-2 px-4 ${
@@ -49,17 +58,54 @@ const MenuGroup = ({
       <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl overflow-hidden`}>
         {items.map((item, index) => {
           const Icon = item.icon;
-          const Component = item.href ? Link : 'button';
+          
+          // If it's a button (has onClick), render a button
+          if (!item.href) {
+            return (
+              <button
+                key={item.label}
+                onClick={item.onClick}
+                className={`w-full flex items-center justify-between p-4 ${
+                  isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                } transition-colors ${
+                  index !== items.length - 1 
+                    ? isDarkMode 
+                      ? 'border-b border-gray-700' 
+                      : 'border-b border-gray-100'
+                    : ''
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    item.color || (isDarkMode ? 'bg-gray-700' : 'bg-gray-100')
+                  }`}>
+                    <Icon className={`w-4 h-4 ${
+                      item.color ? 'text-white' : isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`} />
+                  </div>
+                  <span className={`${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    {item.label}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {item.info && (
+                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {item.info}
+                    </span>
+                  )}
+                  <ChevronRight className={`w-5 h-5 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
+                </div>
+              </button>
+            );
+          }
 
+          // If it has href, render a Link
           return (
-            <Component
+            <Link
               key={item.label}
-              href={item.href || ''}
-              onClick={item.onClick}
+              href={item.href}
               className={`w-full flex items-center justify-between p-4 ${
-                isDarkMode 
-                  ? 'hover:bg-gray-700' 
-                  : 'hover:bg-gray-50'
+                isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
               } transition-colors ${
                 index !== items.length - 1 
                   ? isDarkMode 
@@ -88,7 +134,7 @@ const MenuGroup = ({
                 )}
                 <ChevronRight className={`w-5 h-5 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`} />
               </div>
-            </Component>
+            </Link>
           );
         })}
       </div>
@@ -98,26 +144,120 @@ const MenuGroup = ({
 
 export default function ProviderProfilePage() {
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const router = useRouter();
+  const [profile, setProfile] = useState<ProviderProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+  const [ratingData, setRatingData] = useState<ProviderRating>({
+    total_rating: null,
+    rating_count: 0
+  });
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        if (!isClient) return;
+
+        const providerId = localStorage.getItem('provider_id');
+        const storedData = localStorage.getItem('provider_data');
+        
+        console.log('Provider ID:', providerId);
+        console.log('Stored Data:', storedData);
+
+        if (!providerId || !storedData) {
+          console.log('No stored data found, redirecting to login...');
+          router.push('/provider/login');
+          return;
+        }
+
+        const response = await fetch(`http://127.0.0.1:5000/api/provider/profile/${providerId}`);
+        
+        if (response.status === 401) {
+          console.log('Unauthorized, redirecting to login...');
+          localStorage.removeItem('provider_id');
+          localStorage.removeItem('provider_data');
+          router.push('/provider/login');
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+
+        const data = await response.json();
+        console.log('Profile data:', data);
+        setProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isClient) {
+      fetchProfile();
+    }
+  }, [isClient, router]);
+
+  // Add this effect to fetch the ratings
+useEffect(() => {
+  const fetchRatings = async () => {
+    try {
+      if (!isClient) return;
+      
+      const providerId = localStorage.getItem('provider_id');
+      if (!providerId) return;
+      
+      // Use your existing API endpoint to get provider ratings
+      const response = await fetch(`http://127.0.0.1:5000/api/provider/${providerId}/rating`);
+      if (!response.ok) throw new Error('Failed to fetch ratings');
+      
+      const data = await response.json();
+      setRatingData({
+        total_rating: data.average_rating || 0,
+        rating_count: data.rating_count || 0
+      });
+      
+    } catch (error) {
+      console.error('Error fetching ratings:', error);
+    }
+  };
+
+  fetchRatings();
+}, [isClient]);
+
+  const handleLogout = () => {
+    if (isClient) {
+      localStorage.removeItem('provider_id');
+      localStorage.removeItem('provider_data');
+      router.push('/provider/login');
+    }
+  };
+
+  if (!isClient) {
+    return null;
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!profile) {
+    return <div className="flex items-center justify-center min-h-screen">Error loading profile</div>;
+  }
 
   const accountItems: MenuItem[] = [
     {
       icon: User,
       label: 'Personal Information',
-      href: '/provider/profile/personal',
+      href: '/provider/profile/edit',
       color: 'bg-blue-500'
     },
-    {
-      icon: MapPin,
-      label: 'Business Location',
-      href: '/provider/profile/location',
-      color: 'bg-green-500'
-    },
-    {
-      icon: CreditCard,
-      label: 'Payment Methods',
-      href: '/provider/profile/payment',
-      color: 'bg-purple-500'
-    }
+    
   ];
 
   const preferencesItems: MenuItem[] = [
@@ -131,11 +271,6 @@ export default function ProviderProfilePage() {
       label: 'Dark Mode',
       onClick: toggleDarkMode,
       info: isDarkMode ? 'On' : 'Off'
-    },
-    {
-      icon: Clock,
-      label: 'Working Hours',
-      href: '/provider/profile/hours'
     }
   ];
 
@@ -152,6 +287,40 @@ export default function ProviderProfilePage() {
     }
   ];
 
+  const renderStars = (rating: number | null, count: number) => {
+    if (!rating && count === 0) {
+      return (
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          No reviews yet
+        </span>
+      );
+    }
+  
+    const roundedRating = Math.round((rating || 0) * 2) / 2;
+    return (
+      <div className="flex items-center gap-1">
+        <div className="flex">
+          {[...Array(5)].map((_, index) => (
+            <Star
+              key={index}
+              size={14}  // Smaller size for profile header
+              className={`${
+                index < Math.floor(roundedRating)
+                  ? 'text-yellow-400 fill-yellow-400'
+                  : index === Math.floor(roundedRating) && roundedRating % 1 !== 0
+                  ? 'text-yellow-400 fill-yellow-400 opacity-50'
+                  : 'text-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+        <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          {rating ? ` ${rating.toFixed(1)} (${count})` : ''}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <main className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} pb-20`}>
       {/* Profile Header */}
@@ -159,13 +328,13 @@ export default function ProviderProfilePage() {
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="w-20 h-20 rounded-full overflow-hidden">
-              <Image
-                src="/api/placeholder/80/80"
-                alt="Profile"
-                width={80}
-                height={80}
-                className="object-cover"
-              />
+            <img
+              src={profile.business_photo || '/placeholder-image.jpg'}
+              alt="Profile"
+              width={80}
+              height={80}
+              className="w-full h-full object-cover"
+            />
             </div>
             <button className={`absolute bottom-0 right-0 p-1.5 rounded-full ${
               isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
@@ -179,21 +348,14 @@ export default function ProviderProfilePage() {
             <h1 className={`text-xl font-semibold ${
               isDarkMode ? 'text-gray-100' : 'text-gray-900'
             }`}>
-              John's Cleaning Service
+              {profile.business_name}
             </h1>
             <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Professional Cleaner
+              {profile.service_category}
             </p>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'
-              }`}>
-                4.9 ★
-              </span>
-              <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                156 Reviews
-              </span>
-            </div>
+  {renderStars(ratingData.total_rating, ratingData.rating_count)}
+</div>
           </div>
         </div>
       </div>
@@ -206,6 +368,7 @@ export default function ProviderProfilePage() {
 
         {/* Logout Button */}
         <button 
+          onClick={handleLogout}
           className={`w-full flex items-center justify-center gap-2 p-4 rounded-xl ${
             isDarkMode 
               ? 'bg-gray-800 hover:bg-gray-700' 
