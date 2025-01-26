@@ -141,15 +141,29 @@ export default function ProviderRegisterPage() {
     }
   }, [providerId]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setFormData({ ...formData, businessPhoto: base64String });
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Add file size check
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          setError('Image size should be less than 5MB');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          setFormData(prev => ({ ...prev, businessPhoto: base64String }));
+        };
+        reader.onerror = () => {
+          setError('Error reading file');
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error handling file:', error);
+        setError('Error uploading file');
+      }
     }
   };
 
@@ -263,47 +277,52 @@ export default function ProviderRegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* IC Photo Upload */}
-          <div>
-            <label 
-              className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
-            >
-              IC Photo
-            </label>
-            <div className={`border-2 border-dashed rounded-lg p-4 text-center ${
-              isDarkMode ? 'border-gray-700' : 'border-gray-300'
-            }`}>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                id="photo-upload"
-                required
-              />
-              <label 
-                htmlFor="photo-upload"
-                className="cursor-pointer block"
-              >
-                {formData.businessPhoto ? (
-                  <div className="relative">
-                    <img 
-                      src={formData.businessPhoto} 
-                      alt="IC Photo preview" 
-                      className="w-32 h-32 mx-auto object-cover rounded-lg"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <Upload className={`w-8 h-8 mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                    <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                      Upload IC Photo (Required for verification)
-                    </span>
-                  </>
-                )}
-              </label>
-            </div>
-          </div>
+        <div>
+  <label 
+    className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}
+  >
+    IC Photo
+  </label>
+  <div 
+    className={`border-2 border-dashed rounded-lg p-4 ${
+      isDarkMode ? 'border-gray-700' : 'border-gray-300'
+    }`}
+  >
+    <input
+      type="file"
+      accept="image/*"
+      onChange={handleFileChange}
+      className="w-full h-full opacity-0 absolute"
+      id="photo-upload"
+      capture="environment"
+      required
+    />
+    <div className="text-center">
+      {formData.businessPhoto ? (
+        <div className="relative">
+          <img 
+            src={formData.businessPhoto} 
+            alt="IC Photo preview" 
+            className="w-32 h-32 mx-auto object-cover rounded-lg"
+          />
+          <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Tap to change photo
+          </p>
+        </div>
+      ) : (
+        <div className="py-4">
+          <Upload className={`w-8 h-8 mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            Tap here to take or upload IC Photo
+          </p>
+          <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            (Required for verification)
+          </p>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
 
           {/* Business Name */}
           <div>

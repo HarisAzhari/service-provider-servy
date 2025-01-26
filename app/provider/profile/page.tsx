@@ -264,7 +264,7 @@ useEffect(() => {
     {
       icon: Bell,
       label: 'Notifications',
-      href: '/provider/profile/notifications'
+      href: '/'  // This will keep user on current page
     },
     {
       icon: Moon,

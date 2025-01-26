@@ -229,14 +229,12 @@ export default function ProviderDashboardPage() {
               Welcome back, {providerData?.business_name || 'Provider'}!
             </p>
           </div>
-          <Link href="/provider/notifications">
             <button className="relative">
               <Bell className={`w-6 h-6 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`} />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
                 3
               </span>
             </button>
-          </Link>
         </div>
       </div>
 
