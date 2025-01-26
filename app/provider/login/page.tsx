@@ -107,7 +107,7 @@ export default function ProviderLoginPage() {
 
     try {
       console.log('Making API request...');
-      const response = await fetch('http://127.0.0.1:5000/api/provider/login', {
+      const response = await fetch('http://beerescue.xyz:5000/api/provider/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

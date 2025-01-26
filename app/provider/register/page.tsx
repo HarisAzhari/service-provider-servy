@@ -123,7 +123,7 @@ export default function ProviderRegisterPage() {
     const checkVerificationStatus = async () => {
       if (providerId) {
         try {
-          const response = await fetch(`http://127.0.0.1:5000/api/provider/${providerId}/verification-status`);
+          const response = await fetch(`http://beerescue.xyz:5000/api/provider/${providerId}/verification-status`);
           if (response.ok) {
             const data = await response.json();
             setVerificationStatus(data);
@@ -166,7 +166,7 @@ export default function ProviderRegisterPage() {
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/provider/register', {
+      const response = await fetch('http://beerescue.xyz:5000/api/provider/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

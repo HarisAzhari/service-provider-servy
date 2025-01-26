@@ -185,7 +185,7 @@ export default function ProviderServicesPage() {
         }
 
         // Using the general services endpoint
-        const response = await fetch('http://127.0.0.1:5000/api/services');
+        const response = await fetch('http://beerescue.xyz:5000/api/services');
         
         if (!response.ok) {
           if (response.status === 401) {
@@ -227,7 +227,7 @@ export default function ProviderServicesPage() {
       const service = services.find(s => s.id === serviceId);
       if (!service) return;
 
-      const response = await fetch(`http://127.0.0.1:5000/api/services/${serviceId}/toggle-status`, {
+      const response = await fetch(`http://beerescue.xyz:5000/api/services/${serviceId}/toggle-status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

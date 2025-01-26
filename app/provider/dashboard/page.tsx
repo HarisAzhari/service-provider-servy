@@ -178,13 +178,13 @@ export default function ProviderDashboardPage() {
         }
 
         // Fetch provider data for name and rating
-        const profileResponse = await fetch(`http://127.0.0.1:5000/api/provider/profile/${providerId}`);
+        const profileResponse = await fetch(`http://beerescue.xyz:5000/api/provider/profile/${providerId}`);
         if (!profileResponse.ok) throw new Error('Failed to fetch provider data');
         const profileData = await profileResponse.json();
         setProviderData(profileData);
 
         // Fetch recent bookings
-        const bookingsResponse = await fetch(`http://127.0.0.1:5000/api/booking/provider/${providerId}/bookings`);
+        const bookingsResponse = await fetch(`http://beerescue.xyz:5000/api/booking/provider/${providerId}/bookings`);
         if (!bookingsResponse.ok) throw new Error('Failed to fetch bookings');
         const bookingsData = await bookingsResponse.json();
         

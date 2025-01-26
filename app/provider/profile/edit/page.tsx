@@ -69,7 +69,7 @@ export default function EditProfilePage() {
           return;
         }
 
-        const response = await fetch(`http://127.0.0.1:5000/api/provider/profile/${providerId}`);
+        const response = await fetch(`http://beerescue.xyz:5000/api/provider/profile/${providerId}`);
         
         if (response.status === 401) {
           localStorage.removeItem('provider_id');
@@ -132,7 +132,7 @@ export default function EditProfilePage() {
         updateData.business_photo = newImage;
       }
 
-      const response = await fetch(`http://127.0.0.1:5000/api/provider/update/${providerId}`, {
+      const response = await fetch(`http://beerescue.xyz:5000/api/provider/update/${providerId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
