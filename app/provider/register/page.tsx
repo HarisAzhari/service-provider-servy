@@ -141,6 +141,10 @@ export default function ProviderRegisterPage() {
     }
   }, [providerId]);
 
+  const handleRemovePhoto = () => {
+    setFormData(prev => ({ ...prev, businessPhoto: null }));
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -294,8 +298,7 @@ export default function ProviderRegisterPage() {
       onChange={handleFileChange}
       className="w-full h-full opacity-0 absolute"
       id="photo-upload"
-      capture="environment"
-      required
+      required={!formData.businessPhoto}
     />
     <div className="text-center">
       {formData.businessPhoto ? (
@@ -305,15 +308,24 @@ export default function ProviderRegisterPage() {
             alt="IC Photo preview" 
             className="w-32 h-32 mx-auto object-cover rounded-lg"
           />
+          <button
+            type="button"
+            onClick={handleRemovePhoto}
+            className={`absolute -top-2 -right-2 p-1 rounded-full ${
+              isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-white text-gray-600'
+            } shadow-md hover:bg-red-500 hover:text-white transition-colors`}
+          >
+            <XCircle className="w-5 h-5" />
+          </button>
           <p className={`mt-2 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Tap to change photo
+            Click to upload a different photo
           </p>
         </div>
       ) : (
         <div className="py-4">
           <Upload className={`w-8 h-8 mx-auto mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
           <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-            Tap here to take or upload IC Photo
+            Click to upload IC Photo
           </p>
           <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
             (Required for verification)
@@ -323,6 +335,7 @@ export default function ProviderRegisterPage() {
     </div>
   </div>
 </div>
+
 
           {/* Business Name */}
           <div>
